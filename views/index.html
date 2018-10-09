@@ -1,0 +1,90 @@
+<html>
+<head>
+    <script type="text/javascript" src="face-api.js"></script>
+    <script>
+        async function doTheMLStuff()
+        {
+            const MODEL_URL = '/models'
+
+            await faceapi.loadFaceDetectionModel(MODEL_URL)
+            await faceapi.loadFaceLandmarkModel(MODEL_URL)
+            await faceapi.loadFaceRecognitionModel(MODEL_URL)
+
+
+        //     let imageURL = "/images/tom3.png";
+            
+        //     downloadedImg = new Image;
+        //     downloadedImg.crossOrigin = "Anonymous";
+        //    // downloadedImg.addEventListener("load", imageReceived, false);
+        //     downloadedImg.src = imageURL;
+
+            let image = document.getElementById("imageURL")
+            const minConfidence = 0.8
+            
+
+            var canvas = document.getElementById("canvasImage")
+            var context = canvas.getContext("2d")
+            var imageObj = new Image()
+            // var imageObj = document.getElementById("imageURL")
+
+            imageObj.onload = function(){
+                context.drawImage(imageObj, 69,50)
+            }
+
+           imageObj.src='/images/many-faces.jpg'
+
+            canvas.height=imageObj.height;
+            canvas.width=imageObj.width;
+
+            const fullFaceDescriptions = await faceapi.allFaces(imageObj, minConfidence)
+            fullFaceDescriptions.forEach((fd, i) => {
+                faceapi.drawDetection(canvas, fd.detection, { withScore: true })
+            })
+
+            fullFaceDescriptions.forEach((fd, i) => {
+                faceapi.drawLandmarks(canvas, fd.landmarks, { drawLines: true })
+            })
+
+            // fullFaceDescriptions.forEach(({ detection, descriptor }) => {
+            //     faceapi.drawDetection('overlay', [detection], { withScore: false })
+            //     const bestMatch = getBestMatch(trainDescriptorsByClass, descriptor)
+            //     const text = `${bestMatch.distance < maxDistance ? bestMatch.className : 'unkown'} (${bestMatch.distance})`
+            //     const { x, y, height: boxHeight } = detection.getBox()
+            //     faceapi.drawText(
+            //     canvas.getContext('2d'),
+            //     x,
+            //     y + boxHeight,
+            //     text,
+            //     Object.assign(faceapi.getDefaultDrawOptions(), { color: 'red', fontSize: 16 })
+            //     )
+            // })
+        }
+
+        // function imageReceived() 
+            // {
+            //     let canvas = document.createElement("canvas");
+            //     let context = canvas.getContext("2d");
+
+            //     canvas.width = downloadedImg.width;
+            //     canvas.height = downloadedImg.height;
+                
+            //     context.drawImage(downloadedImg, 0, 0);
+            //     imageBox.appendChild(canvas);
+                
+            //     try {
+            //         localStorage.setItem("saved-image-example", canvas.toDataURL("image/png"));
+            //     }
+            //     catch(err) {
+            //         console.log("Error: " + err);
+            //     }  
+            // }
+    </script>
+	<title></title>
+</head>
+<body>
+<!-- Input HTML Link: <input id="imageURL" type="text"> <br> -->
+<img src="/images/many-faces.jpg" id="imageURL" />
+<input value="Submit" type="button" onclick="doTheMLStuff();">
+<canvas id="canvasImage" width="500" height="500"></canvas>
+</body>
+</html>
