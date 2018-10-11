@@ -18,6 +18,7 @@
             <canvas id="overlay" />
             <canvas id="hiddenCanvas" />
         </div>
+        <input id="trainingLabelText" type="text" placeholder="Label"/>
         <button id="trainButton" class="waves-effect waves-light btn">
             Train
         </button><br>
@@ -44,10 +45,15 @@
         let timeoutId
         let images = []
         let isTrained = false;
+        let trainingLabel = "no_label";
 
         async function train() {
-
-            trainDescriptorsByClass.push(await initTrainDescriptorsByClass(faceapi.recognitionNet, 8, 'Mayank'));
+            let labelValue = document.getElementById("trainingLabelText").value
+            if(labelValue != null)
+            {
+                trainingLabel = labelValue
+            }
+            trainDescriptorsByClass.push(await initTrainDescriptorsByClass(faceapi.recognitionNet, images.length, trainingLabel));
             console.log(trainDescriptorsByClass)
             isTrained = true;
             // updateResults()
@@ -119,7 +125,8 @@
             })
         }
 
-        async function initTrainDescriptorsByClass(net, numImagesForTraining = 8, className) {
+        async function initTrainDescriptorsByClass(net, numImagesForTraining = 1, className) {
+            
             const descriptors = []
             for (let i = 1; i < (numImagesForTraining + 1); i++) {
                 const img = images[i - 1]
@@ -261,6 +268,8 @@
             });
 
             $('#takeScreenshotButton').on('click', takeScreenshot)
+
+            
 
         })
     </script>
