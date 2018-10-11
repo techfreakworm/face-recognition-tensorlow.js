@@ -15,8 +15,6 @@ app.use(express.static(path.join(__dirname, './dist')))
 app.use(express.static(path.join(__dirname, './node_modules/axios/dist')))
 
 app.get('/', (req, res) => res.sendFile(path.join(viewsDir, 'index.html')))
-app.get('/face-recognition', (req, res) => res.sendFile(path.join(viewsDir, 'face_recognition.html')))
-app.get('/webcam', (req, res) => res.sendFile(path.join(viewsDir, 'webcam.html')))
 
 app.post('/fetch_external_image', async (req, res) => {
     const { imageUrl } = req.body
