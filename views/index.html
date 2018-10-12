@@ -18,11 +18,11 @@
             <canvas id="overlay" />
             <canvas id="hiddenCanvas" />
         </div>
-        <input id="trainingLabelText" type="text" placeholder="Label"/>
-        <button id="trainButton" class="waves-effect waves-light btn">
+        <input id="trainingLabelText" type="text" placeholder="Label" />
+        <button id="trainButton" class="waves-effect waves-light btn" onclick="train()">
             Train
         </button><br>
-        <button id="takeScreenshotButton" class="waves-effect waves-light btn">
+        <button id="takeScreenshotButton" class="waves-effect waves-light btn" onclick="takeScreenshot()">
             Take Screenshot
         </button>
         <div>
@@ -45,14 +45,9 @@
         let timeoutId
         let images = []
         let isTrained = false;
-        let trainingLabel = "no_label";
 
         async function train() {
-            let labelValue = document.getElementById("trainingLabelText").value
-            if(labelValue != null)
-            {
-                trainingLabel = labelValue
-            }
+            let trainingLabel = document.getElementById("trainingLabelText").value
             trainDescriptorsByClass.push(await initTrainDescriptorsByClass(faceapi.recognitionNet, images.length, trainingLabel));
             console.log(trainDescriptorsByClass)
             isTrained = true;
@@ -104,19 +99,17 @@
             // Draw a copy of the current frame from the video on the canvas.
             context.drawImage(video, 0, 0, width, height);
 
-            // Get an image dataURL from the canvas.
-            var imageDataURL = hidden_canvas.toDataURL('image/png');
-
-
-
             // Set the dataURL as source of an image element, showing the captured photo.
-            image.setAttribute('src', imageDataURL);
+            image.setAttribute('src', hidden_canvas.toDataURL('image/png'));
 
             //Align the face and get the image as CanvasElement
             let imageCanvas = await locateAndAlignFacesWithSSD(image)
 
-            // push the canvas element into array, this will be the final training data
-            images.push(imageCanvas)
+
+            // push the canvas element into array only when there is one face detected, this will be the final training data
+            if (imageCanvas.length == 1) {
+                images.push(imageCanvas)
+            }
 
             //Update face container
             $('#facesContainer').empty()
@@ -126,11 +119,21 @@
         }
 
         async function initTrainDescriptorsByClass(net, numImagesForTraining = 1, className) {
-            
+
+            if (numImagesForTraining == 0) {
+                alert("No images for training found")
+                throw new Error("No Images for training found")
+            }
+
+            if(className == ""){
+                alert("Please provide a Label to train")
+                throw new Error("Label not provided by user")
+            }
+
             const descriptors = []
             for (let i = 1; i < (numImagesForTraining + 1); i++) {
                 const img = images[i - 1]
-                descriptors.push(await net.computeFaceDescriptor(img))
+                descriptors.push((await net.computeFaceDescriptor(img))[0])
             }
             return {
                 descriptors,
@@ -174,36 +177,37 @@
 
             if (!isTrained) {
                 result = await faceapi.locateFaces(videoEl, minConfidence)
-                faceapi.drawDetection('overlay', result.map(det => det.forSize(width, height)))
+                faceapi.drawDetection(canvas, result.map(det => det.forSize(width, height)), { withScore: true, textColor: '#ccff00', fontSize: 18 })
 
             }
 
-            setTimeout(() => onPlay(videoEl))
+
 
             if (isTrained) {
                 const fullFaceDescriptions = (await faceapi.allFaces(videoEl, minConfidence, useBatchProcessing))
                     .map(fd => fd.forSize(width, height))
 
                 fullFaceDescriptions.forEach(({ detection, descriptor }) => {
-                    faceapi.drawDetection(canvas, [detection], { withScore: true })
+                    faceapi.drawDetection(canvas, [detection], { withScore: true, textColor: '#ccff00', fontSize: 18 })
 
-                    
+
 
                     const bestMatch = getBestMatch(descriptor)
                     var text = `${bestMatch.distance < maxDistance ? bestMatch.className : 'unknown'} (${bestMatch.distance})`
-                   // var { x, y, height: boxHeight } = detection.getBox()
-                   faceapi.drawText(
+                    // var { x, y, height: boxHeight } = detection.getBox()
+                    faceapi.drawText(
                         canvas.getContext('2d'),
                         detection.getBox().x,
                         detection.getBox().y + detection.getBox().height,
                         text,
-                        Object.assign(faceapi.getDefaultDrawOptions(), { color: 'red', fontSize: 16 })
+                        { textColor: '#ccff00', fontSize: 18 }
                     )
 
                 })
 
 
             }
+            setTimeout(() => onPlay(videoEl))
         }
 
 
@@ -219,7 +223,7 @@
             return trainDescriptorsByClass
                 .map(
                     ({ descriptors, className }) => ({
-                        distance: computeMeanDistance(descriptors[0]),
+                        distance: computeMeanDistance(descriptors),
                         className
                     })
                 )
@@ -255,22 +259,10 @@
                 stream => videoEl.srcObject = stream,
                 err => console.error(err)
             )
-            $('#loader').hide()
         }
 
         $(document).ready(function () {
             run()
-            $('#trainButton').on('mousedown', function () {
-                trainButtonIsClicked = true;
-                train();
-            }).on('mouseup mouseleave', function () {
-                trainButtonIsClicked = false;
-            });
-
-            $('#takeScreenshotButton').on('click', takeScreenshot)
-
-            
-
         })
     </script>
 </body>

@@ -74,6 +74,7 @@
         async function run() {
             await faceapi.loadModels('/models')
             trainDescriptorsByClass = await initTrainDescriptorsByClass(faceapi.recognitionNet, 8)
+            console.log(trainDescriptorsByClass)
         }
 
         $(document).ready(function () {
