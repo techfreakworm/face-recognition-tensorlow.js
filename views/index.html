@@ -18,15 +18,16 @@
             <canvas id="overlay" />
             <canvas id="hiddenCanvas" />
         </div>
+            <p id="errorText" style="color:red"></p>            
         <input id="trainingLabelText" type="text" placeholder="Label" />
         <button id="trainButton" class="waves-effect waves-light btn" onclick="train()">
             Train
         </button><br>
         <button id="takeScreenshotButton" class="waves-effect waves-light btn" onclick="takeScreenshot()">
-            Take Screenshot
+            Capture Training Data
         </button>
-        <div>
-            Screenshots:
+        <div id="trainingDataBlock" style="display:none">
+            Training Data:
             <div id="facesContainer"></div>
         </div>
 
@@ -54,31 +55,6 @@
             // updateResults()
 
         }
-
-        // async function updateResults() {
-        //     const inputImgEl = $('#inputImg').get(0)
-        //     const { width, height } = inputImgEl
-        //     const canvas = $('#overlay').get(0)
-        //     canvas.width = video.videoWidth
-        //     canvas.height = video.videoHeight
-
-        //     const fullFaceDescriptions = (await faceapi.allFaces(inputImgEl, minConfidence, useBatchProcessing))
-        //         .map(fd => fd.forSize(width, height))
-
-        //     fullFaceDescriptions.forEach(({ detection, descriptor }) => {
-        //         faceapi.drawDetection('overlay', [detection], { withScore: false })
-        //         const bestMatch = getBestMatch(trainDescriptorsByClass, descriptor)
-        //         const text = `${bestMatch.distance < maxDistance ? bestMatch.className : 'unkown'} (${bestMatch.distance})`
-        //         const { x, y, height: boxHeight } = detection.getBox()
-        //         faceapi.drawText(
-        //             canvas.getContext('2d'),
-        //             x,
-        //             y + boxHeight,
-        //             text,
-        //             Object.assign(faceapi.getDefaultDrawOptions(), { color: 'red', fontSize: 16 })
-        //         )
-        //     })
-        // }
 
         async function takeScreenshot() {
             var hidden_canvas = document.getElementById("hiddenCanvas"),
@@ -108,6 +84,8 @@
 
             // push the canvas element into array only when there is one face detected, this will be the final training data
             if (imageCanvas.length == 1) {
+                $("#trainingDataBlock").show()
+                $("#errorText").hide()
                 images.push(imageCanvas)
             }
 
@@ -121,13 +99,19 @@
         async function initTrainDescriptorsByClass(net, numImagesForTraining = 1, className) {
 
             if (numImagesForTraining == 0) {
-                alert("No images for training found")
+                $("#errorText").html("No Images for training found")
+                $("#errorText").show()
                 throw new Error("No Images for training found")
             }
 
             if(className == ""){
-                alert("Please provide a Label to train")
+                $("#errorText").html("Label not provided by user")
+                $("#errorText").show()
                 throw new Error("Label not provided by user")
+            }
+
+            if(!(className == "") && !(numImagesForTraining == 0)){
+                $("#errorText").hide()
             }
 
             const descriptors = []
@@ -142,30 +126,6 @@
         }
 
         async function onPlay(videoEl) {
-            // if (videoEl.paused || videoEl.ended || !modelLoaded)
-            //     return false
-
-            // const { width, height } = faceapi.getMediaDimensions(videoEl)
-            // const canvas = $('#overlay').get(0)
-            // canvas.width = width
-            // canvas.height = height
-
-            // const mtcnnParams = {
-            //     minFaceSize
-            // }
-
-            // const { results, stats } = await faceapi.nets.mtcnn.forwardWithStats(videoEl, mtcnnParams)
-
-            // if (results) {
-            //     results.forEach(({ faceDetection, faceLandmarks }) => {
-            //         if (faceDetection.score < minConfidence) {
-            //             return
-            //         }
-            //         faceapi.drawDetection('overlay', faceDetection.forSize(width, height))
-            //         faceapi.drawLandmarks('overlay', faceLandmarks.forSize(width, height), { lineWidth: 4, color: 'red' })
-            //     })
-            // }
-            // setTimeout(() => onPlay(videoEl))
 
             if (videoEl.paused || videoEl.ended || !modelLoaded)
                 return false
@@ -262,6 +222,7 @@
         }
 
         $(document).ready(function () {
+            $("#errorText").hide()
             run()
         })
     </script>
