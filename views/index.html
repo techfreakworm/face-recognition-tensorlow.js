@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
@@ -18,7 +19,7 @@
             <canvas id="overlay" />
             <canvas id="hiddenCanvas" />
         </div>
-            <p id="errorText" style="color:red"></p>            
+        <p id="errorText" style="color:red"></p>
         <input id="trainingLabelText" type="text" placeholder="Label" />
         <button id="trainButton" class="waves-effect waves-light btn" onclick="train()">
             Train
@@ -39,17 +40,18 @@
         let maxDistance = 0.6
         let minConfidence = 0.7
         let useBatchProcessing = false
-        let trainDescriptorsByClass = []
+        let trainDescriptorsByClass
         let modelLoaded = false
         let minFaceSize = 200
         let forwardTimes = []
         let timeoutId
         let images = []
         let isTrained = false;
+        let classes = [];
 
         async function train() {
             let trainingLabel = document.getElementById("trainingLabelText").value
-            trainDescriptorsByClass.push(await initTrainDescriptorsByClass(faceapi.recognitionNet, images.length, trainingLabel));
+            trainDescriptorsByClass = await initTrainDescriptorsByClass(faceapi.recognitionNet, images.length, trainingLabel);
             console.log(trainDescriptorsByClass)
             isTrained = true;
             // updateResults()
@@ -104,25 +106,64 @@
                 throw new Error("No Images for training found")
             }
 
-            if(className == ""){
+            if (className == "") {
                 $("#errorText").html("Label not provided by user")
                 $("#errorText").show()
                 throw new Error("Label not provided by user")
             }
 
-            if(!(className == "") && !(numImagesForTraining == 0)){
+            if (!(className == "") && !(numImagesForTraining == 0)) {
                 $("#errorText").hide()
             }
+
+
 
             const descriptors = []
             for (let i = 1; i < (numImagesForTraining + 1); i++) {
                 const img = images[i - 1]
                 descriptors.push((await net.computeFaceDescriptor(img))[0])
             }
-            return {
+
+            const descriptorByClass = {
                 descriptors,
                 className
             }
+
+          //  console.log(descriptorByClass)
+
+            const url = "http://face-recog-serv.herokuapp.com/api";
+
+            var dataArray;
+            /*
+            axios.post(url, descriptorByClass)
+                .then(data => {
+                    console.log("Data is: ", data)
+                    dataArray = data
+                })
+                .catch(err => console.log(err)) */
+            //console.log("Uno")
+            return JSON.parse($.ajax({
+                url: url,
+                method: "POST",
+                data: descriptorByClass,
+                async:false
+            }).responseText)
+       //     console.log(dataArray);
+            //console.log("Duo")
+            
+            // return Promise.all(classes.map(
+            //     async className => {
+            //         const descriptors = []
+            //         for (let i = 1; i < (numImagesForTraining + 1); i++) {
+            //             const img = images[i - 1]
+            //             descriptors.push((await net.computeFaceDescriptor(img))[0])
+            //         }
+            //         return {
+            //             descriptors,
+            //             className
+            //         }
+            //     }
+            // ))
         }
 
         async function onPlay(videoEl) {
